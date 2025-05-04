@@ -1,0 +1,15 @@
+# Ignore Python cache directory
+__pycache__/
+
+# Ignore PyInstaller build directories and files
+build/
+dist/
+*.spec
+
+# Ignore editor specific files
+.vscode/
+
+# Ignore environment files
+.env
+venv/
+env/
