@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrimFlow - Video Silence Cutter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            min-height: 60px;
+        }
+
+        .file-input-button:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .file-input-button.has-file {
+            border-color: #28a745;
+            background: #f0fff4;
+            color: #28a745;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .status-panel.show {
+            display: block;
+        }
+
+        .status-panel.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .status-panel.success {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+
+        .download-button:hover {
+            background: #218838;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .file-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .file-info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .file-info-value {
+            color: #6c757d;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+        .upload-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .error-details {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+
+        .error-details.show {
+            display: block;
+        }
+
+        .file-size-warning {
+            color: #856404;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .file-size-warning.show {
+            display: block;
+        }
+
+        .file-size-error {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .file-size-error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 TrimFlow</h1>
+            <p>Cut silence from your videos automatically</p>
+        </div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="fileInput">
+                    <span class="emoji">📁</span>Select Video File
+                </label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" name="file" class="file-input" accept=".mp4,.mov,.avi,.mkv">
+                    <div class="file-input-button" id="fileInputButton">
+                        <span>Click to select or drag & drop your video file</span>
+                    </div>
+                </div>
+                <div class="help-text">Supported formats: MP4, MOV, AVI, MKV (Max: 500MB)</div>
+                
+                <!-- File Info Panel -->
+                <div id="fileInfo" class="file-info">
+                    <!-- File details will be populated here -->
+                </div>
+                
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="upload-progress">
+                    <div id="uploadProgressFill" class="upload-progress-fill"></div>
+                </div>
+                
+                <!-- File Size Warnings/Errors -->
+                <div id="fileSizeWarning" class="file-size-warning">
+                    <!-- File size warning will appear here -->
+                </div>
+                <div id="fileSizeError" class="file-size-error">
+                    <!-- File size error will appear here -->
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="form-group">
+                    <label for="threshold">
+                        <span class="emoji">🔇</span>Silence Threshold
+                    </label>
+                    <input type="text" id="threshold" name="threshold" class="input-field" value="4%" placeholder="e.g., 4% or -30dB">
+                    <div class="help-text">Lower values detect more silence</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="margin">
+                        <span class="emoji">⏱️</span>Margin
+                    </label>
+                    <input type="text" id="margin" name="margin" class="input-field" value="0.2sec" placeholder="e.g., 0.2sec">
+                    <div class="help-text">Buffer around non-silent parts</div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button" id="submitButton">
+                <span class="emoji">✂️</span>Start Cutting Silence
+            </button>
+        </form>
+
+        <div id="statusPanel" class="status-panel">
+            <div id="statusMessage">Ready to process your video...</div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="downloadSection" style="display: none;">
+                <a href="#" id="downloadButton" class="download-button">
+                    <span class="emoji">⬇️</span>Download Processed Video
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let statusCheckInterval = null;
+
+        const fileInput = document.getElementById('fileInput');
+        const fileInputButton = document.getElementById('fileInputButton');
+        const uploadForm = document.getElementById('uploadForm');
+        const statusPanel = document.getElementById('statusPanel');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadButton = document.getElementById('downloadButton');
+        const submitButton = document.getElementById('submitButton');
+
+        // File input handling
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                
+                // Clear previous warnings/errors
+                clearFileSizeMessages();
+                
+                // File size validation
+                if (file.size > 500 * 1024 * 1024) { // 500MB
+                    showFileSizeError(`File size (${sizeInMB} MB) exceeds the 500MB limit. Please select a smaller file.`);
+                    clearFileSelection();
+                    return;
+                } else if (file.size > 200 * 1024 * 1024) { // 200MB warning
+                    showFileSizeWarning(`Large file detected (${sizeInMB} MB). Processing may take longer.`);
+                }
+                
+                // Show file info and update UI
+                showFileInfo(file.name, file.type, sizeInMB);
+                fileInputButton.textContent = `Selected: ${file.name}`;
+                fileInputButton.classList.add('has-file');
+            } else {
+                clearFileInfo();
+                fileInputButton.textContent = 'Click to select or drag & drop your video file';
+                fileInputButton.classList.remove('has-file');
+            }
+        });
+
+        // Make the file input button clickable
+        fileInputButton.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        // Drag and drop handling
+        fileInputButton.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#667eea';
+        });
+
+        fileInputButton.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#dee2e6';
+        });
+
+        fileInputButton.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#dee2e6';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Form submission
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                showStatus('Please select a video file first.', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('threshold', document.getElementById('threshold').value);
+            formData.append('margin', document.getElementById('margin').value);
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Uploading...';
+            showStatus('Uploading file...', 'processing');
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatus(data.error, 'error');
+                    resetForm();
+                } else {
+                    currentJobId = data.job_id;
+                    showStatus(`Processing ${data.filename}...`, 'processing');
+                    startStatusCheck();
+                }
+            })
+            .catch(error => {
+                showStatus(`Upload failed: ${error.message}`, 'error');
+                resetForm();
+            });
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusPanel.className = `status-panel show ${type}`;
+            
+            if (type === 'processing') {
+                progressBar.style.display = 'block';
+                progressFill.style.width = '100%';
+                downloadSection.style.display = 'none';
+            } else if (type === 'success') {
+                progressBar.style.display = 'none';
+                downloadSection.style.display = 'block';
+            } else {
+                progressBar.style.display = 'none';
+                downloadSection.style.display = 'none';
+            }
+        }
+
+        function startStatusCheck() {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+
+            statusCheckInterval = setInterval(() => {
+                if (!currentJobId) return;
+
+                fetch(`/status/${currentJobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        showStatus(data.progress, 'success');
+                        downloadButton.href = `/download/${data.output_file}`;
+                        stopStatusCheck();
+                        resetForm();
+                    } else if (data.status === 'error') {
+                        if (data.error_details) {
+                            showDetailedError(data.progress, data.error_details);
+                        } else {
+                            showStatus(data.progress, 'error');
+                        }
+                        stopStatusCheck();
+                        resetForm();
+                    } else if (data.status === 'processing') {
+                        statusMessage.textContent = data.progress;
+                    }
+                })
+                .catch(error => {
+                    showStatus(`Status check failed: ${error.message}`, 'error');
+                    stopStatusCheck();
+                    resetForm();
+                });
+            }, 2000); // Check every 2 seconds
+        }
+
+        function stopStatusCheck() {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+        }
+
+        function resetForm() {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<span class="emoji">✂️</span>Start Cutting Silence';
+        }
+
+        // Helper functions for file info and validation
+        function showFileInfo(name, type, size) {
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.innerHTML = `
+                <div class="file-info-item">
+                    <span class="file-info-label">📄 Name:</span>
+                    <span class="file-info-value">${name}</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">🎥 Type:</span>
+                    <span class="file-info-value">${type || 'Unknown'}</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">📊 Size:</span>
+                    <span class="file-info-value">${size} MB</span>
+                </div>
+            `;
+            fileInfo.classList.add('show');
+        }
+
+        function clearFileInfo() {
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.classList.remove('show');
+            clearFileSizeMessages();
+        }
+
+        function clearFileSelection() {
+            fileInput.value = '';
+            fileInputButton.textContent = 'Click to select or drag & drop your video file';
+            fileInputButton.classList.remove('has-file');
+            clearFileInfo();
+        }
+
+        function showFileSizeWarning(message) {
+            const warning = document.getElementById('fileSizeWarning');
+            warning.textContent = `⚠️ ${message}`;
+            warning.classList.add('show');
+        }
+
+        function showFileSizeError(message) {
+            const error = document.getElementById('fileSizeError');
+            error.textContent = `❌ ${message}`;
+            error.classList.add('show');
+        }
+
+        function clearFileSizeMessages() {
+            document.getElementById('fileSizeWarning').classList.remove('show');
+            document.getElementById('fileSizeError').classList.remove('show');
+        }
+
+        function showUploadProgress(percent) {
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadProgressFill = document.getElementById('uploadProgressFill');
+            uploadProgress.classList.add('show');
+            uploadProgressFill.style.width = `${percent}%`;
+        }
+
+        function hideUploadProgress() {
+            const uploadProgress = document.getElementById('uploadProgress');
+            uploadProgress.classList.remove('show');
+        }
+
+        function showDetailedError(errorMessage, details) {
+            showStatus(errorMessage, 'error');
+            
+            // Add detailed error information if available
+            if (details) {
+                const statusPanel = document.getElementById('statusPanel');
+                let errorDetails = statusPanel.querySelector('.error-details');
+                
+                if (!errorDetails) {
+                    errorDetails = document.createElement('div');
+                    errorDetails.className = 'error-details';
+                    statusPanel.appendChild(errorDetails);
+                }
+                
+                errorDetails.textContent = details;
+                errorDetails.classList.add('show');
+            }
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            stopStatusCheck();
+        });
+    </script>
+</body>
+</html>

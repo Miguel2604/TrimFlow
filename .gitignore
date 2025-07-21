@@ -13,3 +13,10 @@ dist/
 .env
 venv/
 env/
+
+# Ignore uploaded and processed files
+uploads/
+outputs/
+
+# Ignore Flask instance folder
+instance/
